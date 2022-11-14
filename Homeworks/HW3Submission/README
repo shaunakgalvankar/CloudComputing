@@ -1,0 +1,102 @@
+TASK -1
+1.	What is the output of “nodes” and “net”
+
+Nodes- c0 h1 h2 h3 h4 h5 h6 h7 h8 s1 s2 s3 s4 s5 s6 s7
+
+Net- 
+h1 h1-eth0:s3-eth2
+h2 h2-eth0:s3-eth3
+h3 h3-eth0:s4-eth2
+h4 h4-eth0:s4-eth3
+h5 h5-eth0:s6-eth2
+h6 h6-eth0:s6-eth3
+h7 h7-eth0:s7-eth2
+h8 h8-eth0:s7-eth3
+s1 lo:  s1-eth1:s2-eth1 s1-eth2:s5-eth1
+s2 lo:  s2-eth1:s1-eth1 s2-eth2:s3-eth1 s2-eth3:s4-eth1
+s3 lo:  s3-eth1:s2-eth2 s3-eth2:h1-eth0 s3-eth3:h2-eth0
+s4 lo:  s4-eth1:s2-eth3 s4-eth2:h3-eth0 s4-eth3:h4-eth0
+s5 lo:  s5-eth1:s1-eth2 s5-eth2:s6-eth1 s5-eth3:s7-eth1
+s6 lo:  s6-eth1:s5-eth2 s6-eth2:h5-eth0 s6-eth3:h6-eth0
+s7 lo:  s7-eth1:s5-eth3 s7-eth2:h7-eth0 s7-eth3:h8-eth0
+c0
+
+
+2. What is the output of “h7 ifconfig”
+
+h7-eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.0.0.7  netmask 255.0.0.0  broadcast 10.255.255.255
+        inet6 fe80::5012:9dff:fe20:a49b  prefixlen 64  scopeid 0x20<link>
+        ether 52:12:9d:20:a4:9b  txqueuelen 1000  (Ethernet)
+        RX packets 86  bytes 6464 (6.4 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 14  bytes 1076 (1.0 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+TASK -2
+
+1.	Draw the function call graph of this controller. For example, once a packet comes to the
+controller, which function is the first to be called, which one is the second, and so forth?
+
+Once a packet comes in the functions are called in the following order->
+Launch()->_handle_PacketIn()->act_like_hub()->resend_packet()
+
+
+
+2.	
+2. Have h1 ping h2, and h1 ping h8 for 100 times (e.g., h1 ping -c100 p2).
+a. How long does it take (on average) to ping for each case?
+H1->H2 3.689 ms
+H1->H8 15.063 ms
+b. What is the minimum and maximum ping you have observed?
+c. What is the difference, and why?
+3.	
+Run “iperf h1 h2” and “iperf h1 h8”
+a. What is “iperf” used for?
+
+Iperf is used for testing TCP Bandwidth
+
+b. What is the throughput for each case?
+H1->H2 min 4.79Mbps max 5.86 Mbps
+H1->H8 min 2.24Mbps max 2.74 Mbps
+
+c. What is the difference, and explain the reasons for the difference.
+The difference is of min 2.24 Mbps and max 3.12 Mbps
+
+The banwidth of the second case is lower than the first case because in the first case there are just 2 links between the 2 hosts whereas in the second case there are 6 links between the 2 hosts
+
+
+4. Which of the switches observe traffic? Please describe your way for observing such
+traffic on switches (e.g., adding some functions in the “of_tutorial” controller).
+
+The switches S1,S2,S3,S5,S7 observe most of the traffic.Can be done by adding print statements in the of_tutorial file in the handle_packetin function
+
+
+TASK -3
+1.	Describe how the above code works, such as how the "MAC to Port" map is established. You could use a ‘ping’ example to describe the establishment process (e.g., h1 ping h2). 
+The code uses a dictionary to store that mac to port mappings.Whenever the destination is not known (present in the dictionary) it will flood the packets to all the destinations and once the correct destination is found then it will store that as a key value pair in the dictionary.Whenever it encounters a destination address present in the dictionary it will just send the packet only to that destination address.This way a lot of network congestion can be avoided.
+2.	(Comment out all prints before doing this experiment) Have h1 ping h2, and h1 ping 
+h8 for 100 times (e.g., h1 ping -c100 p2). 
+1.	How long did it take (on average) to ping for each case? 
+H1->H2 takes around 2.20ms
+H1->H8 takes around 12.41ms
+2.	What is the minimum and maximum ping you have observed? 
+H1->H2 min 1.36ms max 7.71ms
+H1->H8 min 7.59 max 75.123 
+3.	Any difference from Task 2 and why do you think there is a change if there is? 
+The pings in task 2 were slower than the ones in task 3 because when we use the act as switch function the switches don’t flood the network but instead just send it to the exact destination address found in the dictionary.
+3.	Q.3 Run “iperf h1 h2” and “iperf h1 h8”. 
+1.	What is the throughput for each case? 
+iperf h1 h2 6.45 Mbps
+iperf h1 h8 2.53 Mbps
+2.	What is the difference from Task 2 and why do you think there is a change if there is? 
+The difference is that the throughput is higher than task 3 as the network is not flooded because we are using the act like switch function because of which the packets are correctly going to their intended locations instead of the switches flooding the network like a hub.
+
